@@ -22,6 +22,7 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.util.concurrent.TimeUnit;
 
 // register the plugin
 @Plugin(
@@ -62,7 +63,7 @@ public class EssentialInfo {
             TabList tabList = injector.getInstance(TabList.class);
             this.moduleOn(tabList, "Main: Loaded TabList.");
             this.proxyServer.getScheduler().buildTask(this, tabList::pingUpdate)
-                .repeat(50L, java.util.concurrent.TimeUnit.MILLISECONDS).schedule();
+                .repeat(2L, TimeUnit.SECONDS).schedule();
         }
 
         if (setting.isMessageEnabled()) {

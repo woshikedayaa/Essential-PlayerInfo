@@ -11,18 +11,21 @@ import com.velocitypowered.api.event.player.ServerConnectedEvent;
 import com.velocitypowered.api.proxy.Player;
 import com.velocitypowered.api.proxy.ProxyServer;
 import com.velocitypowered.api.proxy.player.TabListEntry;
+import com.velocitypowered.api.util.GameProfile;
 import net.kyori.adventure.text.Component;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
-import java.util.concurrent.TimeUnit;
+import java.util.ArrayList;
+import java.util.UUID;
 
 public class TabList extends AbstractComponent {
     // class server
     private final boolean isCustomTextEnabled;
     private final String tabListText;
     private final int displayMode;
+    private final GameProfile serverDisplayProfile;
 
     /**
      * Instantiates a new Abstract component.
@@ -38,6 +41,10 @@ public class TabList extends AbstractComponent {
         this.isCustomTextEnabled = setting.isCustomTextEnabled();
         this.tabListText = setting.getTabListText();
         this.displayMode = setting.getTabDisplayMode();
+        UUID uid = UUID.randomUUID();
+        this.serverDisplayProfile = new GameProfile(uid,new String(new byte[]{
+                127,127,127,127,127,127
+        }),new ArrayList<>());
     }
 
     /**
@@ -84,17 +91,25 @@ public class TabList extends AbstractComponent {
             }
         }
         // Add servername to player tabList
-        if(playerOfEvent.getTabList().containsEntry(playerOfEvent.getUniqueId())){
-           playerOfEvent.getTabList().removeEntry(playerOfEvent.getUniqueId());
+        String serverName = event.getServer().getServerInfo().getName();
+        if (playerOfEvent.getTabList().containsEntry(this.serverDisplayProfile.getId())){
+            playerOfEvent.getTabList().removeEntry(this.serverDisplayProfile.getId());
         }
+
         playerOfEvent.getTabList().addEntry(
                 TabListEntry.builder()
-                        .displayName(Deserializer.miniMessage(" <blue>Server</blue>:<green>%servername%</green>".replace("%servername%",event.getServer().getServerInfo().getName())))
-                        .profile(playerOfEvent.getGameProfile())
+                        .displayName(getCurrentServerDisplayName(serverName))
+                        .profile(this.serverDisplayProfile)
                         .gameMode(displayMode)
                         .tabList(playerOfEvent.getTabList())
+                        .listed(true)
+                        .latency(0)
                         .build()
         );
+    }
+
+    private @NotNull Component getCurrentServerDisplayName( String servername){
+        return Deserializer.miniMessage("<color:#ffc0cb>[当前服务器] %servername%".replace("%servername%",servername));
     }
 
     // remove disconnected player from list
@@ -138,7 +153,7 @@ public class TabList extends AbstractComponent {
 
     // normal pingUpdate, public method used for registering the scheduler in plugin. Need to improve!
     public void pingUpdate() {
-        for (Player toPlayer : this.proxyServer.getAllPlayers())
+        for (Player toPlayer : this.proxyServer.getAllPlayers()) {
             for (Player fromPlayer : this.proxyServer.getAllPlayers()) {
                 if (fromPlayer.getCurrentServer().isPresent()) {
                     if (toPlayer.getTabList().containsEntry(fromPlayer.getUniqueId())) {
@@ -152,6 +167,19 @@ public class TabList extends AbstractComponent {
                     } else
                         addTabListEntry(toPlayer, fromPlayer, fromPlayer.getCurrentServer().get().getServerInfo().getName());
                 }
+                if(toPlayer.getTabList().containsEntry(this.serverDisplayProfile.getId())){
+                       toPlayer.getTabList().getEntries().stream().filter(t -> t.getProfile().getId().equals(this.serverDisplayProfile.getId())).findFirst().ifPresent(e -> e.setDisplayName(getCurrentServerDisplayName(toPlayer.getCurrentServer().get().getServerInfo().getName())));
+                }else {
+                    toPlayer.getTabList().addEntry(TabListEntry.builder()
+                            .displayName(getCurrentServerDisplayName(toPlayer.getCurrentServer().get().getServerInfo().getName()))
+                            .profile(this.serverDisplayProfile)
+                            .gameMode(displayMode)
+                            .tabList(toPlayer.getTabList())
+                            .listed(true)
+                            .latency(0)
+                            .build());
+                }
             }
+        }
     }
 }
