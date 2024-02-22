@@ -1,5 +1,8 @@
 # Essential-PlayerInfo
 
+## Fork
+本 fork 修改了TabList 让其显示上玩家当前所在服务器名称
+This fork modified the TabList to display the player's current servername (machine translation)
 ## Introduce
 
 This is a very lightweight plugin for Velocity proxy.

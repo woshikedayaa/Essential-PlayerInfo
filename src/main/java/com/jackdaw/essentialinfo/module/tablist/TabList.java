@@ -83,6 +83,18 @@ public class TabList extends AbstractComponent {
                 addTabListEntry(playerOfEvent, fromPlayer, serverName);
             }
         }
+        // Add servername to player tabList
+        if(playerOfEvent.getTabList().containsEntry(playerOfEvent.getUniqueId())){
+           playerOfEvent.getTabList().removeEntry(playerOfEvent.getUniqueId());
+        }
+        playerOfEvent.getTabList().addEntry(
+                TabListEntry.builder()
+                        .displayName(Deserializer.miniMessage(" <blue>Server</blue>:<green>%servername%</green>".replace("%servername%",event.getServer().getServerInfo().getName())))
+                        .profile(playerOfEvent.getGameProfile())
+                        .gameMode(displayMode)
+                        .tabList(playerOfEvent.getTabList())
+                        .build()
+        );
     }
 
     // remove disconnected player from list
